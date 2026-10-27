@@ -1,3 +1,44 @@
+# Praktikum CRUD Project
+
+Daftar project tersedia di `/projects`. Tampilannya menggunakan Bootstrap sederhana.
+
+## Seeder dan pagination (pertemuan 8)
+
+Pastikan koneksi database di `.env` sudah sesuai dan MySQL aktif, lalu jalankan:
+
+```bash
+php artisan migrate
+php artisan db:seed
+```
+
+`DatabaseSeeder` memanggil `ProjectTableSeeder` untuk 10 project contoh dan
+`RandomProjectTableSeeder` untuk 25 project dengan judul acak. Seeder memakai
+`firstOrCreate()` agar data contoh tidak bertambah dua kali ketika dijalankan ulang.
+Generator acak memakai seed tetap supaya judulnya konsisten antar pemanggilan.
+Data project yang sudah ada tidak dikosongkan atau ditimpa.
+
+Untuk menjalankan salah satu seeder:
+
+```bash
+php artisan db:seed --class=ProjectTableSeeder
+php artisan db:seed --class=RandomProjectTableSeeder
+```
+
+Daftar diurutkan dari tanggal terbaru, dengan 10 data per halaman secara default.
+Form pencarian menyediakan pencarian judul dan pilihan 5, 10, atau 25 data per
+halaman. Pencarian serta jumlah data tetap terbawa pada tautan halaman berikutnya.
+Nomor urut berlanjut antar halaman. Informasi halaman, total hasil pencarian, dan
+jumlah data per halaman ditampilkan di bawah tabel, bersama navigasi Bootstrap.
+
+```bash
+npm run build
+php artisan test
+```
+
+Pengujian memakai SQLite sementara sesuai `phpunit.xml`.
+
+---
+
 <p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
 
 <p align="center">

@@ -1,0 +1,752 @@
+\documentclass[a4paper,oneside,11pt]{book}
+
+% ===== Package =====
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage[indonesian]{babel}
+\usepackage[htt]{hyphenat}
+\usepackage{microtype}
+\usepackage{graphicx}
+\usepackage{titling}
+\usepackage{geometry}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage{float}
+\usepackage{array}
+\usepackage{tabularx}
+\usepackage{caption}
+\usepackage{indentfirst}
+\usepackage{xurl}
+\usepackage[hidelinks]{hyperref}
+
+% ===== Margin =====
+\geometry{
+    left=3cm,
+    right=2.5cm,
+    top=3cm,
+    bottom=3cm
+}
+
+% ===== Pengaturan teks =====
+\emergencystretch=3em
+\tolerance=1500
+\hbadness=5000
+\linespread{1.15}
+\setlength{\parskip}{3pt}
+\renewcommand{\_}{\textunderscore\allowbreak{}}
+\captionsetup{font=small,labelfont=bf}
+
+% ===== Pengaturan kode =====
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codepurple}{rgb}{0.58,0,0.82}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{codestyle}{
+    backgroundcolor=\color{backcolour},
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{codepurple},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{codegreen},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,
+    breaklines=true,
+    postbreak=\mbox{\textcolor{codegray}{$\hookrightarrow$}\space},
+    captionpos=b,
+    keepspaces=true,
+    numbers=left,
+    numbersep=6pt,
+    xleftmargin=2em,
+    framexleftmargin=1.6em,
+    xrightmargin=0.3em,
+    showspaces=false,
+    showstringspaces=false,
+    showtabs=false,
+    tabsize=2,
+    frame=single,
+    aboveskip=1em,
+    belowskip=0.8em
+}
+
+\lstset{style=codestyle}
+\AtBeginDocument{\renewcommand{\lstlistingname}{Kode}}
+
+% ===== Identitas =====
+\title{
+    Laporan Praktikum\\
+    Praktikum Pemrograman Web 2\\
+    Pertemuan ke-8\\
+    Seeder dan Pagination pada Aplikasi CRUD Project
+}
+
+\author{
+    Nama Mahasiswa: Gayuh Mukti Aji\\
+    NIM: 25/566296/SV/27058
+}
+
+\date{27 Oktober 2026}
+
+\begin{document}
+
+% ===== Halaman judul =====
+\begin{titlingpage}
+    \begin{center}
+        \vspace*{1cm}
+
+        {\LARGE\bfseries \thetitle\par}
+
+        \vspace{1.5cm}
+
+        % Letakkan lambang_ugm.png pada folder yang sama.
+        \IfFileExists{lambang_ugm.png}{
+            \includegraphics[height=6cm]{lambang_ugm.png}
+        }{
+            \fbox{
+                \parbox[c][6cm][c]{6cm}{
+                    \centering
+                    Lambang Universitas Gadjah Mada
+                }
+            }
+        }
+
+        \vspace{1.5cm}
+
+        {\large
+            \theauthor\\
+            Kelas PL3B2\par
+        }
+
+        \vspace{0.8cm}
+
+        % Isi sesuai dosen pengampu mata kuliah.
+        Dosen Pengampu: \underline{\hspace{5cm}}
+
+        \vspace{1cm}
+
+        \thedate
+    \end{center}
+\end{titlingpage}
+
+\tableofcontents
+\newpage
+
+% =========================================================
+\chapter{Tujuan Praktikum}
+
+Tujuan praktikum pertemuan ke-8 adalah sebagai berikut:
+
+\begin{enumerate}
+    \item Memahami fungsi \textit{seeder} untuk mengisi basis data dengan data contoh.
+    \item Membuat dan menjalankan seeder secara terpisah maupun melalui \texttt{DatabaseSeeder}.
+    \item Menerapkan pagination pada daftar project menggunakan \texttt{paginate()}.
+    \item Menampilkan informasi halaman, jumlah data, dan tautan navigasi.
+    \item Menggunakan tampilan pagination Bootstrap.
+    \item Membuat nomor urut yang berlanjut antarhalaman.
+    \item Menambahkan pencarian judul yang tetap aktif ketika pengguna berpindah halaman.
+    \item Menyediakan pilihan jumlah data sebanyak 5, 10, atau 25 per halaman.
+\end{enumerate}
+
+% =========================================================
+\chapter{Dasar Teori}
+
+\section{Seeder}
+
+Seeder merupakan kelas untuk mengisi basis data dengan data contoh.
+Pada Laravel, kelas seeder berada di direktori
+\path{database/seeders/}.
+Seeder membantu proses pengembangan karena data tidak perlu dimasukkan
+satu per satu melalui form \cite{laravel-seeding}.
+
+Seeder berbeda dengan migration. Migration digunakan untuk mengatur
+struktur tabel, sedangkan seeder digunakan untuk mengisi data ke dalam
+tabel yang sudah tersedia \cite{laravel-seeding,laravel-migrations}.
+
+\section{DatabaseSeeder}
+
+\texttt{DatabaseSeeder} menjadi tempat untuk memanggil beberapa seeder.
+Pemanggilan dilakukan melalui method \texttt{\$this->call()}.
+Dengan cara ini, beberapa seeder dapat dijalankan melalui satu perintah \cite{laravel-seeding}:
+
+\begin{lstlisting}[language={},caption={Menjalankan DatabaseSeeder}]
+php artisan db:seed
+\end{lstlisting}
+
+Seeder tertentu dapat dijalankan menggunakan pilihan
+\texttt{--class}, misalnya:
+
+\begin{lstlisting}[language={},caption={Menjalankan satu seeder}]
+php artisan db:seed --class=ProjectTableSeeder
+\end{lstlisting}
+
+\section{Pencegahan Data Ganda}
+
+Pemanggilan \texttt{create()} akan membuat baris baru setiap kali seeder
+dijalankan. Apabila tidak ditangani, seeder yang dijalankan berulang
+dapat menambah data contoh yang sama.
+
+Pada praktikum ini digunakan \texttt{firstOrCreate()}.
+Method tersebut mencari data berdasarkan atribut yang diberikan.
+Apabila data ditemukan, data yang ada digunakan kembali. Apabila belum
+ditemukan, Laravel membuat data baru \cite{laravel-eloquent}.
+
+Pencarian data contoh menggunakan judul project. Dengan demikian,
+seeder dapat dijalankan ulang tanpa mengosongkan tabel.
+
+\section{Faker}
+
+Faker digunakan untuk menghasilkan data contoh, seperti kalimat dan
+paragraf. Pada praktikum ini, Faker menghasilkan judul dan deskripsi
+untuk seeder kedua.
+
+Generator menggunakan nilai awal tetap melalui \texttt{seed(8)}.
+Tujuannya agar urutan data acak yang dihasilkan tetap konsisten ketika
+seeder dijalankan ulang pada lingkungan dan versi Faker yang sama \cite{faker}.
+Judul yang konsisten dapat dicari kembali oleh
+\texttt{firstOrCreate()} \cite{laravel-eloquent}.
+
+\section{Pagination}
+
+Pagination membagi daftar data menjadi beberapa halaman.
+Sebagai contoh, 35 data dengan batas 10 data per halaman akan
+ditampilkan dalam empat halaman.
+
+Laravel menyediakan \texttt{paginate()} untuk mengambil data sesuai
+halaman yang diminta. Nomor halaman dibaca dari parameter
+\texttt{page} pada URL, misalnya \path{/projects?page=2} \cite{laravel-pagination}.
+
+Hasil \texttt{paginate()} berupa objek
+\texttt{LengthAwarePaginator}. Objek ini menyediakan data halaman aktif
+beserta informasi jumlah seluruh hasil.
+
+\section{Informasi dan Navigasi Halaman}
+
+Beberapa method yang digunakan dalam pagination adalah:
+
+\begin{itemize}
+    \item \texttt{currentPage()}: memperoleh nomor halaman aktif.
+    \item \texttt{lastPage()}: memperoleh nomor halaman terakhir.
+    \item \texttt{total()}: memperoleh jumlah seluruh data hasil query.
+    \item \texttt{perPage()}: memperoleh batas data per halaman.
+    \item \texttt{firstItem()}: memperoleh nomor urut data pertama pada halaman aktif.
+    \item \texttt{links()}: menampilkan tautan navigasi halaman.
+\end{itemize}
+
+Ketika pencarian diterapkan, nilai \texttt{total()} menunjukkan jumlah
+hasil pencarian, bukan jumlah seluruh project tanpa filter \cite{laravel-pagination}.
+
+\section{Parameter Pencarian}
+
+Pencarian judul menggunakan kondisi \texttt{LIKE} pada query.
+Karakter \texttt{\%} digunakan agar kata pencarian dapat ditemukan
+pada bagian judul \cite{laravel-queries}.
+
+Method \texttt{withQueryString()} mempertahankan parameter query pada
+tautan pagination. Dengan demikian, parameter pencarian dan jumlah
+data per halaman tetap digunakan ketika pengguna membuka halaman
+berikutnya \cite{laravel-pagination}.
+
+% =========================================================
+\chapter{Hasil dan Pembahasan}
+
+\section{Gambaran Proyek}
+
+Praktikum diterapkan pada proyek Laravel yang sebelumnya telah memiliki
+fitur CRUD project. Data project disimpan pada tabel
+\texttt{projects} dengan atribut utama \texttt{title} dan
+\texttt{description}.
+
+Modul menggunakan contoh data \texttt{Post}, sedangkan proyek ini
+menggunakan \texttt{Project}. Penyesuaian dilakukan pada nama model,
+seeder, controller, dan view tanpa mengubah tujuan praktikum.
+
+Tampilan tetap menggunakan Bootstrap sederhana. Daftar project
+ditampilkan dalam tabel, sedangkan pencarian dan pilihan jumlah data
+ditempatkan di atas tabel.
+
+\begin{table}[H]
+    \centering
+    \caption{Komponen implementasi pertemuan ke-8}
+    \label{tab:komponen}
+    \renewcommand{\arraystretch}{1.3}
+    \begin{tabularx}{\textwidth}{
+        |>{\raggedright\arraybackslash}p{5cm}
+        |>{\raggedright\arraybackslash}X|
+    }
+        \hline
+        \textbf{Komponen} & \textbf{Fungsi} \\ \hline
+        \texttt{ProjectTableSeeder}
+        & Membuat 10 project contoh dengan judul berurutan. \\ \hline
+
+        \texttt{RandomProject\-TableSeeder}
+        & Membuat 25 project dengan judul acak. \\ \hline
+
+        \texttt{DatabaseSeeder}
+        & Memanggil kedua seeder project. \\ \hline
+
+        \texttt{ProjectController}
+        & Mengatur pencarian, pengurutan, dan pagination. \\ \hline
+
+        \texttt{projects/index.blade.php}
+        & Menampilkan tabel, form pencarian, informasi halaman, dan navigasi. \\ \hline
+
+        \texttt{AppServiceProvider}
+        & Mengaktifkan tampilan pagination Bootstrap 5. \\ \hline
+    \end{tabularx}
+\end{table}
+
+\section{Model Project}
+
+Model \texttt{Project} sudah memiliki properti
+\texttt{\$fillable}. Properti ini menentukan atribut yang dapat diisi
+melalui operasi seperti \texttt{create()} dan
+\texttt{firstOrCreate()} \cite{laravel-eloquent}.
+
+\begin{lstlisting}[language=PHP,caption={Model Project}]
+<?php
+
+namespace App\Models;
+
+use Illuminate\Database\Eloquent\Model;
+
+class Project extends Model
+{
+    protected $fillable = ['title', 'description'];
+}
+\end{lstlisting}
+
+Atribut yang digunakan seeder adalah \texttt{title} dan
+\texttt{description}, sehingga keduanya dicantumkan pada
+\texttt{\$fillable}.
+
+\section{Membuat Seeder untuk 10 Project}
+
+Seeder pertama berada pada
+\path{database/seeders/ProjectTableSeeder.php}.
+Data dibuat menggunakan perulangan dari 1 sampai 10.
+
+\begin{lstlisting}[language=PHP,caption={ProjectTableSeeder.php}]
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Project;
+use Illuminate\Database\Seeder;
+
+class ProjectTableSeeder extends Seeder
+{
+    public function run(): void
+    {
+        for ($i = 1; $i <= 10; $i++) {
+            Project::firstOrCreate(
+                ['title' => 'Project Judul Ke-'.$i],
+                ['description' => 'Deskripsi untuk project judul ke-'.$i]
+            );
+        }
+    }
+}
+\end{lstlisting}
+
+Argumen pertama \texttt{firstOrCreate()} menjadi kondisi pencarian,
+yaitu judul project. Argumen kedua berisi nilai tambahan untuk data
+baru.
+
+Sebagai contoh, iterasi pertama menghasilkan judul
+\texttt{Project Judul Ke-1}. Jika judul tersebut sudah tersedia,
+seeder menggunakan data yang ada dan tidak menambah baris baru.
+
+\section{Membuat Seeder untuk 25 Project Acak}
+
+Latihan pada modul dikembangkan melalui seeder kedua, yaitu
+\path{database/seeders/RandomProjectTableSeeder.php}.
+
+\begin{lstlisting}[language=PHP,caption={RandomProjectTableSeeder.php}]
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\Project;
+use Faker\Factory;
+use Illuminate\Database\Seeder;
+
+class RandomProjectTableSeeder extends Seeder
+{
+    public function run(): void
+    {
+        $faker = Factory::create('id_ID');
+
+        // Seed tetap membuat judul acak yang sama
+        // saat seeder dijalankan ulang.
+        $faker->seed(8);
+
+        for ($i = 1; $i <= 25; $i++) {
+            Project::firstOrCreate(
+                ['title' => 'Project '.$faker->unique()->sentence(3)],
+                ['description' => $faker->paragraph()]
+            );
+        }
+    }
+}
+\end{lstlisting}
+
+Penjelasan kode tersebut adalah sebagai berikut:
+
+\begin{enumerate}
+    \item \texttt{Factory::create('id\_ID')} membuat generator Faker dengan locale Indonesia.
+    \item \texttt{seed(8)} menetapkan nilai awal generator.
+    \item Perulangan menghasilkan 25 data contoh.
+    \item \texttt{unique()->sentence(3)} menghasilkan kalimat judul yang berbeda dalam pemanggilan generator tersebut.
+    \item \texttt{paragraph()} menghasilkan deskripsi.
+    \item \texttt{firstOrCreate()} mencegah penambahan ulang judul contoh yang sudah tersedia.
+\end{enumerate}
+
+Pada basis data kosong, kedua seeder menghasilkan 35 project.
+Jika terdapat data manual sebelumnya, jumlah keseluruhan project dapat
+lebih banyak karena tabel tidak dikosongkan.
+
+\section{Memanggil Seeder melalui DatabaseSeeder}
+
+Kedua seeder dipanggil melalui \texttt{DatabaseSeeder}.
+Pembuatan pengguna contoh yang sebelumnya sudah ada juga diberi
+pemeriksaan email agar tidak dibuat kembali.
+
+\begin{lstlisting}[language=PHP,caption={DatabaseSeeder.php}]
+<?php
+
+namespace Database\Seeders;
+
+use App\Models\User;
+use Illuminate\Database\Console\Seeds\WithoutModelEvents;
+use Illuminate\Database\Seeder;
+
+class DatabaseSeeder extends Seeder
+{
+    use WithoutModelEvents;
+
+    public function run(): void
+    {
+        if (! User::where('email', 'test@example.com')->exists()) {
+            User::factory()->create([
+                'name' => 'Test User',
+                'email' => 'test@example.com',
+            ]);
+        }
+
+        $this->call([
+            ProjectTableSeeder::class,
+            RandomProjectTableSeeder::class,
+        ]);
+    }
+}
+\end{lstlisting}
+
+Pada pelaksanaan praktikum, status migrasi diperiksa terlebih dahulu.
+Setelah seluruh migrasi tercatat selesai, seeder dijalankan melalui
+perintah berikut:
+
+\begin{lstlisting}[language={},caption={Pemeriksaan migrasi dan pengisian data contoh}]
+php artisan migrate:status
+php artisan db:seed
+\end{lstlisting}
+
+Kedua seeder berhasil dijalankan pada MySQL lokal.
+Pengisian data tidak menggunakan \texttt{truncate()} atau
+\texttt{migrate:fresh}, sehingga data project yang sudah tersedia
+tetap dipertahankan.
+
+\section{Mengubah Daftar Project menjadi Pagination}
+
+Sebelumnya, method \texttt{index()} menggunakan
+\texttt{Project::all()}, sehingga seluruh project diambil sekaligus.
+Pada pertemuan ini, pengambilan data diubah menggunakan
+\texttt{paginate()}.
+
+Berikut method \texttt{index()} pada
+\path{app/Http/Controllers/ProjectController.php}.
+
+\begin{lstlisting}[language=PHP,caption={Method index pada ProjectController}]
+public function index(Request $request)
+{
+    $validated = $request->validate([
+        'search' => 'nullable|string|max:200',
+        'per_page' => 'nullable|integer|in:5,10,25',
+    ]);
+
+    $search = trim($validated['search'] ?? '');
+    $perPage = (int) ($validated['per_page'] ?? 10);
+
+    $query = Project::query();
+
+    if ($search !== '') {
+        $query->where('title', 'like', '%'.$search.'%');
+    }
+
+    $projects = $query->orderByDesc('created_at')
+        ->orderByDesc('id')
+        ->paginate($perPage)
+        ->withQueryString();
+
+    return view(
+        'projects.index',
+        compact('projects', 'search', 'perPage')
+    );
+}
+\end{lstlisting}
+
+Alur method tersebut adalah sebagai berikut:
+
+\begin{enumerate}
+    \item Memvalidasi parameter pencarian dan jumlah data per halaman.
+    \item Menggunakan pencarian kosong dan batas 10 data sebagai nilai awal.
+    \item Membentuk query melalui \texttt{Project::query()}.
+    \item Menambahkan kondisi pencarian apabila pengguna mengisi judul.
+    \item Mengurutkan data berdasarkan tanggal pembuatan terbaru.
+    \item Menggunakan ID sebagai urutan tambahan apabila tanggal pembuatan sama.
+    \item Mengambil data halaman aktif dengan \texttt{paginate()}.
+    \item Mempertahankan parameter URL melalui \texttt{withQueryString()}.
+    \item Mengirim hasil dan nilai filter ke view.
+\end{enumerate}
+
+Urutan tambahan berdasarkan ID diperlukan karena beberapa data seeder
+dapat memiliki waktu pembuatan yang sama. Dengan urutan tersebut,
+penampilan data pada pengujian menjadi konsisten.
+
+\section{Form Pencarian dan Pilihan Jumlah Data}
+
+Form pada halaman daftar menggunakan method \texttt{GET}.
+Pengguna dapat mencari judul sekaligus menentukan jumlah data per
+halaman.
+
+Berikut cuplikan bagian utama form pada
+\path{resources/views/projects/index.blade.php}.
+
+\begin{lstlisting}[language=HTML,caption={Form pencarian dan pilihan jumlah data}]
+<form action="{{ route('projects.index') }}"
+    method="GET" class="row g-2 mb-3">
+
+    <div class="col-sm-6">
+        <label for="search" class="form-label">
+            Cari judul
+        </label>
+        <input type="search" name="search" id="search"
+            class="form-control"
+            value="{{ old('search', $search) }}"
+            maxlength="200">
+    </div>
+
+    <div class="col-sm-3">
+        <label for="per_page" class="form-label">
+            Data per halaman
+        </label>
+        <select name="per_page" id="per_page"
+            class="form-select">
+            @foreach ([5, 10, 25] as $size)
+                <option value="{{ $size }}"
+                    @selected($perPage == $size)>
+                    {{ $size }}
+                </option>
+            @endforeach
+        </select>
+    </div>
+
+    <div class="col-sm-3 d-flex align-items-end gap-2">
+        <button type="submit" class="btn btn-primary">
+            Cari
+        </button>
+        <a href="{{ route('projects.index') }}"
+            class="btn btn-secondary">
+            Reset
+        </a>
+    </div>
+</form>
+\end{lstlisting}
+
+Sebagai contoh, pencarian kata \texttt{Judul} dengan batas lima data
+menghasilkan parameter berikut:
+
+\begin{lstlisting}[language={},caption={Contoh parameter pencarian}]
+/projects?search=Judul&per_page=5
+\end{lstlisting}
+
+Ketika pengguna membuka halaman kedua, parameter pencarian tetap
+disertakan:
+
+\begin{lstlisting}[language={},caption={Contoh parameter pada halaman kedua}]
+/projects?search=Judul&per_page=5&page=2
+\end{lstlisting}
+
+Tombol Reset membuka kembali daftar tanpa parameter pencarian.
+Form menggunakan \texttt{GET} karena proses ini membaca data.
+
+\section{Nomor Urut yang Berlanjut}
+
+Nomor urut sebelumnya menggunakan \texttt{\$loop->iteration}.
+Cara tersebut akan memulai penomoran dari 1 pada setiap halaman.
+Untuk membuat nomor berlanjut, digunakan
+\texttt{firstItem()} dan indeks perulangan.
+
+\begin{lstlisting}[language=HTML,caption={Nomor urut pada tabel project}]
+@forelse ($projects as $project)
+    <tr>
+        <td>
+            {{ $projects->firstItem() + $loop->index }}
+        </td>
+        <td>{{ $project->title }}</td>
+        <td>
+            <a href="{{ route('projects.show', $project) }}">
+                Lihat Detail
+            </a>
+        </td>
+    </tr>
+@empty
+    <tr>
+        <td colspan="3">
+            @if ($projects->total() > 0)
+                Tidak ada data pada halaman ini.
+            @elseif ($search !== '')
+                Tidak ada project yang cocok.
+            @else
+                Belum ada data project.
+            @endif
+        </td>
+    </tr>
+@endforelse
+\end{lstlisting}
+
+Pada halaman kedua dengan batas 10 data, nilai
+\texttt{firstItem()} adalah 11.
+Karena \texttt{\$loop->index} dimulai dari 0, nomor baris pertama
+menjadi 11, kemudian 12, dan seterusnya.
+
+Jika batas data diubah menjadi lima, nomor baris pertama halaman kedua
+menjadi 6. Penomoran mengikuti hasil pagination yang sedang digunakan.
+
+\section{Informasi dan Tautan Halaman}
+
+Informasi halaman dan navigasi ditempatkan setelah tabel, masih di
+dalam bagian \texttt{content}.
+
+\begin{lstlisting}[language=HTML,caption={Informasi halaman dan tautan navigasi}]
+<p>
+    Halaman:
+    {{ $projects->currentPage() }}
+    dari {{ $projects->lastPage() }}<br>
+
+    Jumlah Data: {{ $projects->total() }}<br>
+
+    Data Per Halaman: {{ $projects->perPage() }}
+</p>
+
+{{ $projects->links() }}
+\end{lstlisting}
+
+Pada pengujian dengan 35 project dan batas 10 data, halaman pertama
+menampilkan informasi:
+
+\begin{lstlisting}[language={},caption={Informasi pada basis data pengujian}]
+Halaman: 1 dari 4
+Jumlah Data: 35
+Data Per Halaman: 10
+\end{lstlisting}
+
+Apabila pencarian hanya menemukan 10 project, jumlah data dan jumlah
+halaman dihitung berdasarkan 10 hasil tersebut.
+
+\section{Menggunakan Pagination Bootstrap}
+
+Pagination menggunakan tampilan Bootstrap 5 agar sesuai dengan
+komponen tabel dan form pada aplikasi.
+Pengaturan ditempatkan pada
+\path{app/Providers/AppServiceProvider.php}.
+
+\begin{lstlisting}[language=PHP,caption={Pengaturan pagination Bootstrap}]
+use Illuminate\Pagination\Paginator;
+
+// Di dalam kelas AppServiceProvider:
+public function boot(): void
+{
+    Paginator::useBootstrapFive();
+}
+\end{lstlisting}
+
+Setelah pengaturan tersebut, pemanggilan
+\texttt{\$projects->links()} menggunakan view pagination Bootstrap.
+Tidak diperlukan penyalinan seluruh view pagination ke dalam proyek \cite{laravel-pagination}.
+
+
+% =========================================================
+\chapter{Kesimpulan}
+
+Berdasarkan praktikum yang telah dilakukan, seeder dapat digunakan
+untuk menyediakan data contoh secara lebih cepat.
+Pada proyek ini dibuat dua seeder, yaitu seeder untuk 10 project
+berurutan dan seeder untuk 25 project dengan judul acak.
+Keduanya dipanggil melalui \texttt{DatabaseSeeder} dan telah berhasil
+dijalankan pada MySQL lokal.
+
+Pagination diterapkan melalui \texttt{paginate()} pada daftar
+project. Daftar menampilkan informasi halaman, jumlah hasil, batas
+data, serta tautan navigasi dengan Bootstrap.
+Nomor urut dibuat berlanjut menggunakan \texttt{firstItem()}
+dan indeks perulangan.
+
+Latihan dikembangkan melalui pencarian judul dan pilihan batas
+5, 10, atau 25 data per halaman.
+Parameter pencarian dipertahankan menggunakan
+\texttt{withQueryString()}, sehingga pengguna dapat berpindah halaman
+tanpa kehilangan filter.
+
+Seluruh pengujian otomatis menghasilkan 26 pengujian lulus dengan
+167 assertions. Proses build frontend juga berhasil.
+Hasil tersebut menunjukkan bahwa implementasi CRUD sebelumnya tetap
+berjalan bersama penambahan Seeder dan Pagination.
+
+% =========================================================
+% Daftar pustaka dibentuk otomatis oleh thebibliography.
+\cleardoublepage
+\renewcommand{\bibname}{Daftar Pustaka}
+
+\begin{thebibliography}{9}
+\addcontentsline{toc}{chapter}{Daftar Pustaka}
+\raggedright
+\setlength{\itemsep}{0.8em}
+
+\bibitem{laravel-seeding}
+Laravel, ``Database: Seeding,''
+\textit{Laravel 12.x Documentation}. [Daring].
+Tersedia: \url{https://laravel.com/docs/12.x/seeding}.
+[Diakses: 27-Okt-2026].
+
+\bibitem{laravel-migrations}
+Laravel, ``Database: Migrations,''
+\textit{Laravel 12.x Documentation}. [Daring].
+Tersedia: \url{https://laravel.com/docs/12.x/migrations}.
+[Diakses: 27-Okt-2026].
+
+\bibitem{laravel-eloquent}
+Laravel, ``Eloquent: Getting Started,''
+\textit{Laravel 12.x Documentation}. [Daring].
+Tersedia: \url{https://laravel.com/docs/12.x/eloquent}.
+[Diakses: 27-Okt-2026].
+
+\bibitem{faker}
+FakerPHP, ``Faker,''
+\textit{FakerPHP Documentation}. [Daring].
+Tersedia: \url{https://fakerphp.org/}.
+[Diakses: 27-Okt-2026].
+
+\bibitem{laravel-pagination}
+Laravel, ``Database: Pagination,''
+\textit{Laravel 12.x Documentation}. [Daring].
+Tersedia: \url{https://laravel.com/docs/12.x/pagination}.
+[Diakses: 27-Okt-2026].
+
+\bibitem{laravel-queries}
+Laravel, ``Database: Query Builder,''
+\textit{Laravel 12.x Documentation}. [Daring].
+Tersedia: \url{https://laravel.com/docs/12.x/queries}.
+[Diakses: 27-Okt-2026].
+
+\end{thebibliography}
+
+\end{document}
