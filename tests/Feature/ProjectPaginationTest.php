@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Project;
+use App\Models\User;
 use Database\Seeders\DatabaseSeeder;
 use Database\Seeders\ProjectTableSeeder;
 use Database\Seeders\RandomProjectTableSeeder;
@@ -20,6 +21,7 @@ class ProjectPaginationTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
+        $this->actingAs(User::factory()->create(['email' => 'admin@example.com']));
     }
 
     public function test_seeders_can_run_separately_and_again_without_removing_existing_data(): void
@@ -38,7 +40,7 @@ class ProjectPaginationTest extends TestCase
         $this->seed(DatabaseSeeder::class);
         $this->seed(DatabaseSeeder::class);
         $this->assertDatabaseCount('projects', 36);
-        $this->assertDatabaseCount('users', 1);
+        $this->assertDatabaseCount('users', 2);
         $this->assertDatabaseHas('projects', [
             'id' => $existing->id,
             'description' => 'Data yang sudah dibuat secara manual.',

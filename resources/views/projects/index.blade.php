@@ -37,7 +37,10 @@
             <thead>
                 <tr>
                     <th scope="col">No.</th>
+                    <th scope="col">Thumbnail</th>
                     <th scope="col">Judul Project</th>
+                    <th scope="col">Kategori</th>
+                    <th scope="col">Status</th>
                     <th scope="col">Aksi</th>
                 </tr>
             </thead>
@@ -45,12 +48,27 @@
                 @forelse ($projects as $project)
                     <tr>
                         <td>{{ $projects->firstItem() + $loop->index }}</td>
+                        <td>
+                            @if ($project->thumbnail)
+                                <img src="{{ asset('storage/' . $project->thumbnail) }}"
+                                     alt="{{ $project->title }}" width="80" height="60"
+                                     class="rounded object-fit-cover">
+                            @else
+                                <span class="text-muted">—</span>
+                            @endif
+                        </td>
                         <td>{{ $project->title }}</td>
+                        <td>{{ $project->category?->name ?? '—' }}</td>
+                        <td>
+                            <span class="badge {{ $project->status === 'published' ? 'text-bg-success' : 'text-bg-secondary' }}">
+                                {{ ucfirst($project->status) }}
+                            </span>
+                        </td>
                         <td><a href="{{ route('projects.show', $project) }}">Lihat Detail</a></td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="3">
+                        <td colspan="6">
                             @if ($projects->total() > 0)
                                 Tidak ada data pada halaman ini.
                             @elseif ($search !== '')

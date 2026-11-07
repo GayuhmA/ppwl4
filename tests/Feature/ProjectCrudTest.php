@@ -3,6 +3,7 @@
 namespace Tests\Feature;
 
 use App\Models\Project;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use PHPUnit\Framework\Attributes\DataProvider;
 use Tests\TestCase;
@@ -16,6 +17,7 @@ class ProjectCrudTest extends TestCase
         parent::setUp();
 
         $this->withoutVite();
+        $this->actingAs(User::factory()->create(['email' => 'admin@example.com']));
     }
 
     public function test_empty_list_and_create_form_are_available(): void
@@ -174,12 +176,12 @@ class ProjectCrudTest extends TestCase
 
     public function test_missing_projects_return_404(): void
     {
-        $this->get('/projects/999')->assertNotFound();
-        $this->get('/projects/999/edit')->assertNotFound();
-        $this->put('/projects/999', [
+        $this->get(route('projects.show', 999))->assertNotFound();
+        $this->get(route('projects.edit', 999))->assertNotFound();
+        $this->put(route('projects.update', 999), [
             'title' => 'Project kuliah',
             'description' => 'Deskripsi project untuk praktikum.',
         ])->assertNotFound();
-        $this->delete('/projects/999')->assertNotFound();
+        $this->delete(route('projects.destroy', 999))->assertNotFound();
     }
 }

@@ -3,10 +3,13 @@
         <a href="{{ route('home') }}">Home</a>
         <a href="{{ route('about') }}">About</a>
         <a href="{{ route('education') }}">Education</a>
+        <a href="{{ route('portfolio.projects') }}">Projects</a>
 
         @auth
+            <a href="{{ route('dashboard') }}">Dashboard</a>
             @if (auth()->user()->email === 'admin@example.com')
-                <a href="{{ route('projects.index') }}">Projects</a>
+                <a href="{{ route('projects.index') }}">Kelola Projects</a>
+                <a href="{{ route('skills.index') }}">Skills</a>
             @endif
 
             <a href="{{ route('profile-saya') }}">Profil Saya</a>

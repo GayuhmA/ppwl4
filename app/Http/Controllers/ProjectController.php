@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Category;
 use App\Models\Project;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 
 class ProjectController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
     public function index(Request $request)
     {
         $validated = $request->validate([
@@ -19,8 +18,7 @@ class ProjectController extends Controller
         $search = trim($validated['search'] ?? '');
         $perPage = (int) ($validated['per_page'] ?? 10);
 
-        $query = Project::query();
-
+        $query = Project::with('category');
         if ($search !== '') {
             $query->where('title', 'like', '%'.$search.'%');
         }
@@ -31,65 +29,85 @@ class ProjectController extends Controller
         return view('projects.index', compact('projects', 'search', 'perPage'));
     }
 
-    /**
-     * Show the form for creating a new resource.
-     */
     public function create()
     {
-        return view('projects.create');
+        return view('projects.create', [
+            'categories' => Category::orderBy('name')->get(),
+        ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request)
     {
         $validated = $request->validate([
             'title' => 'required|string|min:5|max:200',
             'description' => 'required|string|min:10',
+            'category_id' => 'nullable|exists:categories,id',
+            'status' => 'nullable|in:published,draft',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:min_width=400,min_height=300',
         ]);
+
+        $validated['status'] ??= 'draft';
+
+        if ($request->hasFile('thumbnail')) {
+            $validated['thumbnail'] = $request->file('thumbnail')
+                ->store('projects/thumbnails', 'public');
+        }
+
         Project::create($validated);
 
         return redirect()->route('projects.index')
             ->with('success', 'Project berhasil ditambahkan.');
     }
 
-    /**
-     * Display the specified resource.
-     */
     public function show(Project $project)
     {
+        $project->load(['category', 'images']);
+
         return view('projects.show', compact('project'));
     }
 
-    /**
-     * Show the form for editing the specified resource.
-     */
     public function edit(Project $project)
     {
-        return view('projects.edit', compact('project'));
+        return view('projects.edit', [
+            'project' => $project,
+            'categories' => Category::orderBy('name')->get(),
+        ]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
     public function update(Request $request, Project $project)
     {
         $validated = $request->validate([
             'title' => 'required|string|min:5|max:200',
             'description' => 'required|string|min:10',
+            'category_id' => 'nullable|exists:categories,id',
+            'status' => 'nullable|in:published,draft',
+            'thumbnail' => 'nullable|image|mimes:jpg,jpeg,png,webp|max:2048|dimensions:min_width=400,min_height=300',
         ]);
+
+        if ($request->hasFile('thumbnail')) {
+            if ($project->thumbnail) {
+                Storage::disk('public')->delete($project->thumbnail);
+            }
+            $validated['thumbnail'] = $request->file('thumbnail')
+                ->store('projects/thumbnails', 'public');
+        }
+
         $project->update($validated);
 
         return redirect()->route('projects.index')
             ->with('success', 'Project berhasil diperbarui.');
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
     public function destroy(Project $project)
     {
+        if ($project->thumbnail) {
+            Storage::disk('public')->delete($project->thumbnail);
+        }
+
+        foreach ($project->images as $image) {
+            Storage::disk('public')->delete($image->image);
+        }
+
         $project->delete();
 
         return redirect()->route('projects.index')
