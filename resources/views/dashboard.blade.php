@@ -85,7 +85,7 @@
                             @if (auth()->user()->email === 'admin@example.com')
                                 <a href="{{ route('projects.show', $project) }}" class="btn btn-sm btn-info">Kelola</a>
                             @else
-                                <a href="{{ route('portfolio.projects.show', $project) }}" class="btn btn-sm btn-info">Detail</a>
+                                <a href="{{ route('portfolio.projects.show', ['project' => $project->slug]) }}" class="btn btn-sm btn-info">Detail</a>
                             @endif
                         </td>
                     </tr>

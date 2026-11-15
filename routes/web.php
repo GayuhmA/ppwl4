@@ -12,7 +12,8 @@ Route::get('/', fn () => view('home'))->name('home');
 Route::get('/about', fn () => view('about'))->name('about');
 Route::get('/education', fn () => view('education'))->name('education');
 Route::get('/projects', [PortfolioController::class, 'projects'])->name('portfolio.projects');
-Route::get('/projects/{project}', [PortfolioController::class, 'show'])->name('portfolio.projects.show');
+Route::get('/projects/{project:slug}', [PortfolioController::class, 'show'])
+    ->name('portfolio.projects.show');
 
 Route::middleware('auth')->group(function () {
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
