@@ -7,7 +7,7 @@
     <a href="{{ route('projects.create') }}" class="btn btn-primary mb-3">Tambah Project</a>
 
     <form action="{{ route('projects.index') }}" method="GET" class="row g-2 mb-3">
-        <div class="col-sm-6">
+        <div class="col-sm-4">
             <label for="search" class="form-label">Cari judul</label>
             <input type="search" name="search" id="search" class="form-control"
                 value="{{ old('search', $search) }}" maxlength="200">
@@ -16,6 +16,17 @@
             @enderror
         </div>
         <div class="col-sm-3">
+            <label for="status" class="form-label">Status</label>
+            <select name="status" id="status" class="form-select">
+                <option value="">Semua status</option>
+                <option value="draft" @selected($status === 'draft')>Draft</option>
+                <option value="published" @selected($status === 'published')>Published</option>
+            </select>
+            @error('status')
+                <div class="text-danger">{{ $message }}</div>
+            @enderror
+        </div>
+        <div class="col-sm-2">
             <label for="per_page" class="form-label">Data per halaman</label>
             <select name="per_page" id="per_page" class="form-select">
                 @foreach ([5, 10, 25] as $size)
@@ -71,8 +82,8 @@
                         <td colspan="6">
                             @if ($projects->total() > 0)
                                 Tidak ada data pada halaman ini.
-                            @elseif ($search !== '')
-                                Tidak ada project yang cocok.
+                            @elseif ($search !== '' || $status !== '')
+                                Tidak ada project yang cocok dengan filter.
                             @else
                                 Belum ada data project.
                             @endif
