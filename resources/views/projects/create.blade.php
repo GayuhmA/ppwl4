@@ -20,12 +20,67 @@
         </div>
 
         <div class="mb-3">
+            <label for="short_description" class="form-label">Ringkasan singkat</label>
+            <textarea name="short_description" id="short_description" rows="2" maxlength="255"
+                      class="form-control @error('short_description') is-invalid @enderror">{{ old('short_description') }}</textarea>
+            <div class="form-text">Opsional, maksimal 255 karakter. Cocok untuk ringkasan di kartu project.</div>
+            @error('short_description')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
+        </div>
+
+        <div class="mb-3">
             <label for="description" class="form-label">Deskripsi</label>
             <textarea name="description" id="description" rows="5" minlength="10" required
                       class="form-control @error('description') is-invalid @enderror">{{ old('description') }}</textarea>
             @error('description')
                 <div class="invalid-feedback">{{ $message }}</div>
             @enderror
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="project_date" class="form-label">Tanggal project</label>
+                <input type="date" name="project_date" id="project_date"
+                       class="form-control @error('project_date') is-invalid @enderror"
+                       value="{{ old('project_date') }}">
+                @error('project_date')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="col-md-6 mb-3 d-flex align-items-end">
+                <div class="form-check mb-2">
+                    <input type="hidden" name="is_featured" value="0">
+                    <input class="form-check-input @error('is_featured') is-invalid @enderror"
+                           type="checkbox" name="is_featured" id="is_featured" value="1"
+                           @checked(old('is_featured', false))>
+                    <label class="form-check-label" for="is_featured">Project unggulan</label>
+                    @error('is_featured')
+                        <div class="invalid-feedback">{{ $message }}</div>
+                    @enderror
+                </div>
+            </div>
+        </div>
+
+        <div class="row">
+            <div class="col-md-6 mb-3">
+                <label for="project_url" class="form-label">URL project</label>
+                <input type="url" name="project_url" id="project_url"
+                       class="form-control @error('project_url') is-invalid @enderror"
+                       value="{{ old('project_url') }}" maxlength="255" placeholder="https://...">
+                @error('project_url')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
+            <div class="col-md-6 mb-3">
+                <label for="repository_url" class="form-label">URL repository</label>
+                <input type="url" name="repository_url" id="repository_url"
+                       class="form-control @error('repository_url') is-invalid @enderror"
+                       value="{{ old('repository_url') }}" maxlength="255" placeholder="https://...">
+                @error('repository_url')
+                    <div class="invalid-feedback">{{ $message }}</div>
+                @enderror
+            </div>
         </div>
 
         <div class="row">
@@ -55,6 +110,41 @@
                     <div class="invalid-feedback">{{ $message }}</div>
                 @enderror
             </div>
+        </div>
+
+        <fieldset class="mb-3">
+            <legend class="form-label">Teknologi yang digunakan</legend>
+            @forelse ($technologies as $technology)
+                <div class="form-check">
+                    <input class="form-check-input @error('technologies') is-invalid @enderror"
+                           type="checkbox" name="technologies[]"
+                           id="technology-{{ $technology->id }}" value="{{ $technology->id }}"
+                           @checked(in_array($technology->id, (array) old('technologies', [])))>
+                    <label class="form-check-label" for="technology-{{ $technology->id }}">
+                        {{ $technology->name }}
+                    </label>
+                </div>
+            @empty
+                <p class="text-muted small mb-0">Belum ada pilihan teknologi. Tambahkan data teknologi terlebih dahulu.</p>
+            @endforelse
+            @error('technologies')
+                <div class="text-danger small">{{ $message }}</div>
+            @enderror
+            @error('technologies.*')
+                <div class="text-danger small">{{ $message }}</div>
+            @enderror
+        </fieldset>
+
+        <div class="mb-3">
+            <label for="new_technology" class="form-label">Tambah teknologi baru</label>
+            <input type="text" name="new_technology" id="new_technology"
+                   class="form-control @error('new_technology') is-invalid @enderror"
+                   value="{{ old('new_technology') }}" maxlength="100"
+                   placeholder="Contoh: Laravel, Vue, MySQL">
+            <div class="form-text">Opsional. Teknologi ini akan ditambahkan ke daftar dan dikaitkan dengan project setelah disimpan.</div>
+            @error('new_technology')
+                <div class="invalid-feedback">{{ $message }}</div>
+            @enderror
         </div>
 
         <div class="mb-3">
